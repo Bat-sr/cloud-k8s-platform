@@ -1,0 +1,25 @@
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+!example.tfvars
+
+# Secrets - never commit these
+.env
+*.pem
+*.key
+credentials
+.aws/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# App
+node_modules/
+__pycache__/
+*.pyc
