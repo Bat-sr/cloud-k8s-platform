@@ -30,3 +30,12 @@ Terraform builds the VPC, EKS, ECR and IAM. Prometheus/Grafana watch the cluster
 
 ## Cost warning
 EKS, NAT gateways and load balancers bill by the hour. Always run terraform destroy when done.
+
+## Quick start (local)
+Requires Docker Desktop.
+
+```
+docker compose up --build
+```
+Then open http://localhost:8080 (health check: http://localhost:8080/health).
+Stop with Ctrl+C, then `docker compose down`.

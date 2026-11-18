@@ -1,0 +1,33 @@
+#!/bin/bash
+# Runs once at first boot on the MASTER. Installs RKE2 in "server" mode.
+set -euxo pipefail
+
+# Read this machine's own IP addresses from the instance metadata service (IMDSv2)
+TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 300")
+PUBLIC_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/public-ipv4)
+PRIVATE_IP=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/local-ipv4)
+
+mkdir -p /etc/rancher/rke2
+cat > /etc/rancher/rke2/config.yaml <<CONFIG
+token: ${token}
+node-name: ${node_name}
+tls-san:
+  - $PUBLIC_IP
+  - $PRIVATE_IP
+write-kubeconfig-mode: "0644"
+CONFIG
+
+export INSTALL_RKE2_TYPE=server
+%{ if rke2_version != "" ~}
+export INSTALL_RKE2_VERSION=${rke2_version}
+%{ else ~}
+export INSTALL_RKE2_CHANNEL=stable
+%{ endif ~}
+curl -sfL https://get.rke2.io | sh -
+
+systemctl enable rke2-server.service
+systemctl start rke2-server.service
+
+# Convenience for the ubuntu user: kubectl and kubeconfig
+echo 'export PATH=$PATH:/var/lib/rancher/rke2/bin' >> /home/ubuntu/.bashrc
+echo 'export KUBECONFIG=/etc/rancher/rke2/rke2.yaml' >> /home/ubuntu/.bashrc

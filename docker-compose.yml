@@ -1,0 +1,16 @@
+# Run the whole demo with one command:  docker compose up --build
+services:
+  web:
+    build: ./app                  # build the image from app/Dockerfile
+    image: cloud-k8s-app:0.1      # name of the image that gets built
+    container_name: cloud-k8s-app
+    ports:
+      - "8080:8080"               # laptop port : container port
+    environment:
+      APP_VERSION: "0.1.0"
+    restart: unless-stopped       # restart if it crashes
+    healthcheck:                  # Docker checks /health, like Kubernetes probes will
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
