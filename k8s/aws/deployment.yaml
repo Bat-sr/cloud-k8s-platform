@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-k8s-app
+  labels:
+    app: cloud-k8s-app
+spec:
+  replicas: 2                      # run 2 copies (pods) of the app
+  selector:
+    matchLabels:
+      app: cloud-k8s-app
+  template:
+    metadata:
+      labels:
+        app: cloud-k8s-app
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/bat-sr/cloud-k8s-app:0.1   # pulled from GitHub Container Registry (package must be public)
+          imagePullPolicy: IfNotPresent   # pull once per node, then reuse
+          ports:
+            - containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: "0.1.0"
+          resources:
+            requests:                     # minimum the pod asks for
+              cpu: 50m
+              memory: 64Mi
+            limits:                       # maximum the pod may use
+              cpu: 250m
+              memory: 128Mi
+          readinessProbe:                 # "is it ready to receive traffic?"
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:                  # "is it still alive? if not, restart it"
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false

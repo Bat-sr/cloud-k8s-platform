@@ -23,3 +23,10 @@ Thumbs.db
 node_modules/
 __pycache__/
 *.pyc
+
+# Terraform plan/apply output saved for review (contains project ID and IP)
+terraform/**/plan-output*.txt
+
+# Saved plan files (contain secrets such as the RKE2 token)
+*.tfplan
+tfplan
