@@ -1,0 +1,4 @@
+NAME                STATUS   ROLES                AGE   VERSION          INTERNAL-IP   EXTERNAL-IP   OS-IMAGE             KERNEL-VERSION           CONTAINER-RUNTIME
+rke2-lab-master     Ready    control-plane,etcd   28m   v1.36.6+rke2r1   10.20.1.152   <none>        Ubuntu 22.04.5 LTS   6.8.0-1070-aws (amd64)   containerd://2.3.7-k3s1
+rke2-lab-worker-1   Ready    <none>               28m   v1.36.6+rke2r1   10.20.1.33    <none>        Ubuntu 22.04.5 LTS   6.8.0-1070-aws (amd64)   containerd://2.3.7-k3s1
+rke2-lab-worker-2   Ready    <none>               28m   v1.36.6+rke2r1   10.20.1.109   <none>        Ubuntu 22.04.5 LTS   6.8.0-1070-aws (amd64)   containerd://2.3.7-k3s1
