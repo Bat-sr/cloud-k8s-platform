@@ -1,0 +1,51 @@
+#!/bin/bash
+# Startup script for the MASTER. Installs RKE2 in "server" mode.
+# Google Cloud runs startup scripts on EVERY boot, so a marker file makes sure we install only once.
+set -euxo pipefail
+
+MARKER=/var/lib/rke2-bootstrap.done
+if [ -f "$MARKER" ]; then
+  echo "RKE2 already installed - nothing to do"
+  exit 0
+fi
+
+# Read this machine's own IP addresses from the Google metadata server
+MD=http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0
+PRIVATE_IP=$(curl -s -H "Metadata-Flavor: Google" $MD/ip)
+PUBLIC_IP=""
+for i in $(seq 1 30); do
+  PUBLIC_IP=$(curl -s -f -H "Metadata-Flavor: Google" $MD/access-configs/0/external-ip || true)
+  if [ -n "$PUBLIC_IP" ]; then
+    break
+  fi
+  sleep 2
+done
+
+mkdir -p /etc/rancher/rke2
+cat > /etc/rancher/rke2/config.yaml <<CONFIG
+token: ${token}
+node-name: ${node_name}
+tls-san:
+  - $PUBLIC_IP
+  - $PRIVATE_IP
+write-kubeconfig-mode: "0644"
+CONFIG
+
+export INSTALL_RKE2_TYPE=server
+%{ if rke2_version != "" ~}
+export INSTALL_RKE2_VERSION=${rke2_version}
+%{ else ~}
+export INSTALL_RKE2_CHANNEL=stable
+%{ endif ~}
+curl -sfL https://get.rke2.io | sh -
+
+systemctl enable rke2-server.service
+systemctl start rke2-server.service
+
+# kubectl + kubeconfig for every user who logs in
+cat > /etc/profile.d/rke2.sh <<'PROFILE'
+export PATH=$PATH:/var/lib/rancher/rke2/bin
+export KUBECONFIG=/etc/rancher/rke2/rke2.yaml
+PROFILE
+
+touch "$MARKER"
