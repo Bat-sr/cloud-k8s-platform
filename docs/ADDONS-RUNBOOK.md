@@ -1,15 +1,15 @@
 # Add-ons runbook (Ingress, autoscaling, monitoring, ArgoCD)
 
-Step-by-step commands for the two cluster rounds. **Nothing here has been run yet** — after each
-round, update the README roadmap only for what really worked.
+Step-by-step commands for the two cluster rounds. Both rounds were run on the AWS lab; the commands below are the ones that worked.
+Ports 13000 and 18443 are used for port-forward because Windows reserves some low ports (3000 failed on one machine).
 
 Always start with `.\scripts\lab-up.ps1 -Deploy` and finish with `.\scripts\lab-down.ps1`.
 
 ## One-time installs on Windows
 
 ```powershell
-winget install Helm.Helm
-winget install k6.k6
+winget install -e --id Helm.Helm
+winget install -e --id GrafanaLabs.k6
 ```
 
 Open a new PowerShell window afterwards so `helm` and `k6` are found.
@@ -28,7 +28,7 @@ kubectl get hpa                          # TARGETS should show a % (not <unknown
 
 Open `http://<master_public_ip>/` in the browser. If it does not answer, Traefik may not be bound
 to port 80 on the nodes — check the `svc` output above and fix before load testing (the security group
-already allows 80 and 443 from your IP only).
+allows 80 and 443 from your IP only).
 
 Load test, in two windows:
 
@@ -56,10 +56,10 @@ helm install monitoring prometheus-community/kube-prometheus-stack `
   -f k8s/monitoring/kube-prometheus-stack-values.yaml `
   --set grafana.adminPassword=CHANGE-ME
 kubectl -n monitoring get pods -w
-kubectl -n monitoring port-forward service/monitoring-grafana 3000:80
+kubectl -n monitoring port-forward service/monitoring-grafana 13000:80
 ```
 
-Browse to http://localhost:3000, user `admin`. Open the dashboard "Kubernetes / Compute Resources / Namespace (Pods)".
+Browse to http://localhost:13000, user `admin`. Open the dashboard "Kubernetes / Compute Resources / Namespace (Pods)".
 
 ### ArgoCD
 
@@ -69,15 +69,17 @@ kubectl apply -n argocd --server-side -f https://raw.githubusercontent.com/argop
 kubectl -n argocd get pods -w
 # initial admin password (read it, do not paste it anywhere public)
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | ForEach-Object { [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($_)) }
-kubectl -n argocd port-forward service/argocd-server 8443:443
+kubectl -n argocd port-forward service/argocd-server 18443:443
 ```
 
-Browse to https://localhost:8443 (accept the self-signed certificate warning), user `admin`.
+Browse to https://localhost:18443 (accept the self-signed certificate warning), user `admin`.
 
 Then register the app:
 
 ```powershell
 kubectl apply -f k8s/argocd/application.yaml
+# optional lab tweak: show the Ingress as Healthy (it has no LoadBalancer address)
+kubectl patch configmap argocd-cm -n argocd --type merge --patch-file k8s/argocd/ingress-health-patch.yaml
 ```
 
 Test GitOps: change `replicas` or an env value in `k8s/aws/deployment.yaml` on GitHub and watch ArgoCD sync it.

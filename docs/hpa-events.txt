@@ -1,0 +1,18 @@
+$ kubectl describe hpa cloud-k8s-app   (run 2026-11-27 after the k6 test)
+
+Reference:                                             Deployment/cloud-k8s-app
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  2% (1m) / 50%
+Min replicas:                                          2
+Max replicas:                                          6
+Deployment pods:       2 current / 2 desired
+
+Events:
+  Type     Reason                        Age                From                       Message
+  ----     ------                        ----               ----                       -------
+  Warning  FailedGetResourceMetric       39m                horizontal-pod-autoscaler  failed to get cpu utilization: unable to get metrics for resource cpu (metrics API not ready right after cluster start)
+  Normal   SuccessfulRescale             8m29s              horizontal-pod-autoscaler  New size: 3; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             8m14s              horizontal-pod-autoscaler  New size: 4; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             7m29s              horizontal-pod-autoscaler  New size: 6; reason: cpu resource utilization (percentage of request) above target
+  Normal   SuccessfulRescale             4m14s              horizontal-pod-autoscaler  New size: 3; reason: All metrics below target
+  Normal   SuccessfulRescale             3m59s              horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
