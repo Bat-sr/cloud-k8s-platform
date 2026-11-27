@@ -1,0 +1,5 @@
+NAME                             READY   STATUS    RESTARTS   AGE   IP           NODE                NOMINATED NODE   READINESS GATES
+cloud-k8s-app-5fd9dc577d-c4bst   1/1     Running   0          13m   10.42.2.5    rke2-lab-worker-2   <none>           <none>
+cloud-k8s-app-5fd9dc577d-cl9sw   1/1     Running   0          27s   10.42.0.10   rke2-lab-master     <none>           <none>
+cloud-k8s-app-5fd9dc577d-fxxlq   1/1     Running   0          27s   10.42.1.6    rke2-lab-worker-1   <none>           <none>
+cloud-k8s-app-5fd9dc577d-xpgpt   1/1     Running   0          13m   10.42.1.5    rke2-lab-worker-1   <none>           <none>

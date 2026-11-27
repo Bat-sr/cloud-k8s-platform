@@ -21,3 +21,7 @@ Problems I hit, the cause, and the fix.
 ## Google Cloud: billing required, no free-trial credit
 - **Cause:** the billing account was a paid account with no credits, and the free trial needed a prepayment.
 - **Fix:** I did not apply anything there (it would charge my card) and moved the lab back to AWS. The GCP Terraform is kept in `terraform/gcp-rke2/` as a plan-only variant.
+
+## The web page at `localhost:8080` was the wrong app after `kubectl port-forward`
+- **Cause:** a local `docker compose up` container was already using port 8080, so the page I opened came from my laptop, not from the cluster. The clue was `Served by` showing a Docker container ID (`f80f2b993a81`) and an uptime of over an hour, instead of a pod name like `cloud-k8s-app-5fd9dc577d-c4bst`.
+- **Fix:** forward to another local port (`kubectl port-forward service/cloud-k8s-app 8081:80`) and open `http://localhost:8081`. Always check the `Served by` value to see which app answered.
