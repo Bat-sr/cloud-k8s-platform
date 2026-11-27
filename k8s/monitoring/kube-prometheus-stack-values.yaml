@@ -1,6 +1,7 @@
 # Small footprint values for kube-prometheus-stack on the 3-node lab (4 GiB RAM per node).
 # No PersistentVolumes: RKE2 has no default StorageClass, so data lives in the pod and is lost
 # when it restarts. That is fine for a short-lived lab.
+# Monitoring pods are kept off the master (affinity below): it already uses about half of its RAM.
 alertmanager:
   enabled: false
 
@@ -17,6 +18,14 @@ kubeProxy:
 
 prometheus:
   prometheusSpec:
+    affinity:
+      nodeAffinity:
+        requiredDuringSchedulingIgnoredDuringExecution:
+          nodeSelectorTerms:
+            - matchExpressions:
+                - key: kubernetes.io/hostname
+                  operator: NotIn
+                  values: ["rke2-lab-master"]
     retention: 6h
     resources:
       requests:
@@ -26,17 +35,36 @@ prometheus:
         memory: 1Gi
 
 grafana:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["rke2-lab-master"]
   # The admin password is NOT stored here. Pass it when installing (see docs/ADDONS-RUNBOOK.md).
+  # Do not download the default plugins on every start: it slows startup and wastes memory.
+  env:
+    GF_PLUGINS_PREINSTALL_DISABLED: "true"
   resources:
     requests:
       cpu: 50m
-      memory: 128Mi
+      memory: 192Mi
     limits:
-      memory: 256Mi
+      memory: 512Mi
   service:
     type: ClusterIP   # reach it with kubectl port-forward, not from the internet
 
 prometheusOperator:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: kubernetes.io/hostname
+                operator: NotIn
+                values: ["rke2-lab-master"]
   resources:
     requests:
       cpu: 50m

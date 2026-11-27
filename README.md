@@ -166,11 +166,29 @@ EC2 console that nothing is still running.
 - [x] CI: GitHub Actions builds and pushes the image to GHCR
 - [ ] Terraform modules and S3 remote state (written, first run still to do)
 - [ ] CI: Terraform fmt/validate and a Trivy image scan (written, first run on GitHub still to come)
-- [ ] Ingress (Traefik) and autoscaling (HPA + k6 load test) — manifests written, not yet run on a cluster
-- [ ] Monitoring (Prometheus, Grafana) — values written, not yet run
-- [ ] GitOps (ArgoCD) — Application written, not yet run
+- [x] Ingress (Traefik) and autoscaling (HPA + k6 load test) — verified on the AWS cluster, see below
+- [x] Monitoring (Prometheus, Grafana) — verified on the AWS cluster
+- [x] GitOps (ArgoCD) — verified on the AWS cluster
 
 Commands for these: [docs/ADDONS-RUNBOOK.md](docs/ADDONS-RUNBOOK.md).
+
+## Result: Ingress and autoscaling on AWS
+
+- Traefik (the RKE2 default ingress) listens on port 80 of every node. Requests to `http://<node-ip>/api/info` alternate between the app pods, so the load is spread.
+- A k6 test with up to 80 virtual users for 4 minutes sent 57,124 requests with 0% failures (p95 about 97 ms, about 238 requests/s). Details: [docs/k6-results.txt](docs/k6-results.txt).
+- During the test the HorizontalPodAutoscaler scaled the app from 2 to 6 pods, then back to 2 after the load stopped. Events: [docs/hpa-events.txt](docs/hpa-events.txt).
+
+## Result: monitoring and GitOps on AWS
+
+- **Prometheus + Grafana** (Helm chart `kube-prometheus-stack`, values in [k8s/monitoring/](k8s/monitoring/kube-prometheus-stack-values.yaml)) run on the worker nodes only. The Kubernetes dashboards show CPU and memory of the app pods.
+
+  ![Grafana dashboard for the default namespace](docs/images/grafana-dashboard.png)
+
+- **ArgoCD** watches `k8s/aws` on the `main` branch of this repository and keeps the cluster in sync (automatic sync with self-heal). The Deployment ignores `/spec/replicas` so ArgoCD and the HPA do not fight. The Application is defined in [k8s/argocd/application.yaml](k8s/argocd/application.yaml); it reached **Synced** and **Healthy**.
+
+  ![ArgoCD application tree](docs/images/argocd-synced.png)
+
+- Lab-specific note: Traefik is reached through hostPort 80/443 on the nodes, so the Ingress never gets a load balancer address and ArgoCD showed it as "Progressing". [k8s/argocd/ingress-health-patch.yaml](k8s/argocd/ingress-health-patch.yaml) tells ArgoCD to treat it as healthy.
 
 ## Troubleshooting
 

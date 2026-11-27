@@ -1,0 +1,10 @@
+# Lab-only tweak for ArgoCD. Apply with:
+#   kubectl patch configmap argocd-cm -n argocd --type merge --patch-file k8s/argocd/ingress-health-patch.yaml
+# Traefik on this RKE2 lab is reached through hostPort 80/443 on the nodes, so the Ingress never gets
+# a LoadBalancer address. ArgoCD would show it as "Progressing" forever; this reports it as Healthy.
+data:
+  resource.customizations.health.networking.k8s.io_Ingress: |
+    hs = {}
+    hs.status = "Healthy"
+    hs.message = "Served by Traefik hostPort; no LoadBalancer address expected in this lab"
+    return hs

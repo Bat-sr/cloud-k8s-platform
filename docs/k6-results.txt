@@ -1,0 +1,11 @@
+$ k6 run -e BASE_URL=http://<master-public-ip> loadtest/k6-load.js
+Up to 80 virtual users for 4 minutes, through the Traefik Ingress on port 80.
+
+  http_req_duration: p(95)=96.81ms   (threshold p(95)<1000)  PASSED
+  http_req_failed:   rate=0.00%      (threshold rate<0.05)   PASSED
+
+  checks_total.......: 57124   237.8/s
+  checks_succeeded...: 100.00% 57124 out of 57124
+  http_req_duration..: avg=81.15ms min=31.16ms med=78.91ms max=442.82ms p(90)=88.24ms p(95)=96.81ms
+  http_reqs..........: 57124   237.8/s
+  vus_max............: 80
