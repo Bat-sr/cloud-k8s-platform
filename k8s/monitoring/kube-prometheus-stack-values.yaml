@@ -1,0 +1,45 @@
+# Small footprint values for kube-prometheus-stack on the 3-node lab (4 GiB RAM per node).
+# No PersistentVolumes: RKE2 has no default StorageClass, so data lives in the pod and is lost
+# when it restarts. That is fine for a short-lived lab.
+alertmanager:
+  enabled: false
+
+# RKE2 binds these control-plane components to localhost, so Prometheus could not scrape them
+# and they would show as permanently "down". Turn them off.
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+prometheus:
+  prometheusSpec:
+    retention: 6h
+    resources:
+      requests:
+        cpu: 100m
+        memory: 400Mi
+      limits:
+        memory: 1Gi
+
+grafana:
+  # The admin password is NOT stored here. Pass it when installing (see docs/ADDONS-RUNBOOK.md).
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  service:
+    type: ClusterIP   # reach it with kubectl port-forward, not from the internet
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      memory: 192Mi

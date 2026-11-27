@@ -1,0 +1,44 @@
+name: Terraform check
+
+# Checks formatting and syntax only. It never talks to AWS or GCP and needs no secrets.
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "terraform/**"
+      - ".github/workflows/terraform-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    name: terraform fmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Check formatting
+        run: terraform fmt -check -recursive -diff terraform
+
+  validate:
+    name: validate ${{ matrix.dir }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - terraform/bootstrap/state-bucket
+          - terraform/envs/aws-lab
+          - terraform/gcp-rke2
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - name: Init without backend
+        run: terraform -chdir=${{ matrix.dir }} init -backend=false -input=false
+      - name: Validate
+        run: terraform -chdir=${{ matrix.dir }} validate

@@ -45,7 +45,11 @@ flowchart LR
 | `docker-compose.yml` | Run the app locally with one command |
 | `k8s/local/` | Manifests for the local `kind` cluster |
 | `k8s/aws/` | Manifests for the AWS cluster (image from GHCR) |
-| `terraform/rke2/` | AWS infrastructure and RKE2 cluster (`tf.ps1` is a Windows login helper) |
+| `terraform/modules/rke2-cluster/` | Reusable module: VPC, security group, EC2 instances and RKE2 bootstrap |
+| `terraform/envs/aws-lab/` | The lab environment that calls the module; state is kept in S3 |
+| `terraform/bootstrap/state-bucket/` | One-time S3 bucket for Terraform state (versioned, encrypted, private) |
+| `terraform/tf.ps1` | Windows helper: runs Terraform with your `aws login` session |
+| `scripts/` | PowerShell helpers, e.g. `check-aws-leftovers.ps1` |
 | `terraform/gcp-rke2/` | The same design for Google Cloud (written and planned, not applied) |
 | `docs/` | Troubleshooting log |
 
@@ -81,12 +85,23 @@ to keep `replicas: 2`.
 
 Requires the AWS CLI (logged in with `aws login`), Terraform and an SSH key (`~/.ssh/id_ed25519.pub`).
 
+One-time setup: create the S3 bucket that stores the Terraform state. It is separate from the lab, so
+destroying the lab never deletes the state.
+
 ```
-cd terraform/rke2
-copy example.tfvars terraform.tfvars   # then set allowed_cidr to <your public IP>/32
-terraform init
-.\tf.ps1 plan -out=tfplan
-.\tf.ps1 apply tfplan
+aws login
+.\terraform\tf.ps1 bootstrap init
+.\terraform\tf.ps1 bootstrap apply          # prints bucket_name and backend_hcl
+```
+Copy `terraform/envs/aws-lab/backend.hcl.example` to `backend.hcl` and fill in the bucket name, and copy
+`example.tfvars` to `terraform.tfvars` (set `allowed_cidr` to `<your public IP>/32`). Both files are git-ignored.
+
+Build the cluster:
+
+```
+.\terraform\tf.ps1 lab init '-backend-config=backend.hcl'
+.\terraform\tf.ps1 lab plan -out=tfplan
+.\terraform\tf.ps1 lab apply tfplan
 ```
 Wait about 5 to 10 minutes for RKE2 to install, then fetch the kubeconfig (see the `kubeconfig_hint`
 output), set `KUBECONFIG`, and check `kubectl get nodes` (expect 1 control-plane and 2 workers, all `Ready`).
@@ -101,7 +116,7 @@ kubectl apply -f k8s/aws/
 kubectl port-forward service/cloud-k8s-app 8080:80
 ```
 
-`tf.ps1` exists because Terraform's AWS provider cannot read `aws login` sessions directly; the script
+`terraform/tf.ps1` exists because Terraform's AWS provider cannot read `aws login` sessions directly; the script
 exports short-lived credentials into the process and then runs Terraform.
 
 ## Result: running on AWS
@@ -149,8 +164,13 @@ EC2 console that nothing is still running.
 - [x] RKE2 cluster on AWS (1 master + 2 workers, all nodes `Ready`)
 - [x] Deploy the app to the AWS cluster (image from GHCR), scale to 4 replicas, then destroy
 - [x] CI: GitHub Actions builds and pushes the image to GHCR
-- [ ] Monitoring (Prometheus, Grafana)
-- [ ] GitOps (ArgoCD)
+- [ ] Terraform modules and S3 remote state (written, first run still to do)
+- [ ] CI: Terraform fmt/validate and a Trivy image scan (written, first run on GitHub still to come)
+- [ ] Ingress (Traefik) and autoscaling (HPA + k6 load test) — manifests written, not yet run on a cluster
+- [ ] Monitoring (Prometheus, Grafana) — values written, not yet run
+- [ ] GitOps (ArgoCD) — Application written, not yet run
+
+Commands for these: [docs/ADDONS-RUNBOOK.md](docs/ADDONS-RUNBOOK.md).
 
 ## Troubleshooting
 

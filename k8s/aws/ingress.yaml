@@ -1,0 +1,19 @@
+# Sends HTTP traffic that arrives on port 80 of the nodes to the app Service.
+# RKE2 v1.36 ships Traefik as the default ingress controller, so we use its class name.
+# After the cluster is up, confirm with: kubectl get ingressclass
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloud-k8s-app
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:                        # no host = match any host name / plain IP
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: cloud-k8s-app
+                port:
+                  number: 80

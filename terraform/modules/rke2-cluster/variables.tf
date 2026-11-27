@@ -4,12 +4,6 @@ variable "project" {
   default     = "rke2-lab"
 }
 
-variable "region" {
-  description = "AWS region (Singapore is close to Thailand)"
-  type        = string
-  default     = "ap-southeast-1"
-}
-
 variable "allowed_cidr" {
   description = "Your public IP in CIDR form, e.g. 203.0.113.10/32. Only this address can reach SSH, the Kubernetes API and ports 80/443."
   type        = string
@@ -29,13 +23,13 @@ variable "ssh_public_key_path" {
 variable "master_instance_type" {
   description = "Instance type for the master (RKE2 server needs about 4 GB RAM)"
   type        = string
-  default     = "t3.medium"
+  default     = "c7i-flex.large"
 }
 
 variable "worker_instance_type" {
   description = "Instance type for the workers"
   type        = string
-  default     = "t3.medium"
+  default     = "c7i-flex.large"
 }
 
 variable "worker_count" {

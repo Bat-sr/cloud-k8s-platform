@@ -30,3 +30,6 @@ terraform/**/plan-output*.txt
 # Saved plan files (contain secrets such as the RKE2 token)
 *.tfplan
 tfplan
+
+# Personal S3 backend settings (bucket name); copy backend.hcl.example
+backend.hcl
