@@ -7,7 +7,7 @@ Problems I hit, the cause, and the fix.
 - **Fix:** close and reopen PowerShell (or refresh PATH) and run the command again.
 
 ## `kubectl apply -f k8s/local/` says the path does not exist; `.\tf.ps1` is not recognized
-- **Cause:** the terminal was in the wrong folder. Relative paths only work from the repo root, and `.\tf.ps1` only from `terraform\rke2`.
+- **Cause:** the terminal was in the wrong folder. Relative paths only work from the repo root, and the old `.\tf.ps1` (at that time inside `terraform\rke2`) only from its own folder. The helper now lives at `terraform\tf.ps1` and takes the target as its first argument, so run it from the repo root.
 - **Fix:** `cd` into the right folder first, then run the command.
 
 ## Terraform fails with `ExpiredToken` even after `aws login` again
@@ -25,3 +25,13 @@ Problems I hit, the cause, and the fix.
 ## The web page at `localhost:8080` was the wrong app after `kubectl port-forward`
 - **Cause:** a local `docker compose up` container was already using port 8080, so the page I opened came from my laptop, not from the cluster. The clue was `Served by` showing a Docker container ID (`f80f2b993a81`) and an uptime of over an hour, instead of a pod name like `cloud-k8s-app-5fd9dc577d-c4bst`.
 - **Fix:** forward to another local port (`kubectl port-forward service/cloud-k8s-app 8081:80`) and open `http://localhost:8081`. Always check the `Served by` value to see which app answered.
+
+## `No positional arguments are expected` when running `tf.ps1 lab init`
+
+**Cause:** PowerShell splits an unquoted argument such as `-backend-config=backend.hcl` at the dot and passes two pieces to Terraform.
+
+**Fix:** put the argument in single quotes:
+
+```powershell
+.\terraform\tf.ps1 lab init -reconfigure '-backend-config=backend.hcl'
+```

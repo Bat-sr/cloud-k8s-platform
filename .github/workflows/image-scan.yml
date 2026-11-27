@@ -1,0 +1,32 @@
+name: Image scan (Trivy)
+
+# Builds the app image locally (nothing is pushed) and scans it for known vulnerabilities.
+# Report-only for now: findings are listed in the log but do not fail the build.
+# To make it strict later, change exit-code to "1".
+on:
+  pull_request:
+    paths:
+      - "app/**"
+      - ".github/workflows/image-scan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image (not pushed)
+        run: docker build -t cloud-k8s-app:scan ./app
+
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: cloud-k8s-app:scan
+          format: table
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "0"

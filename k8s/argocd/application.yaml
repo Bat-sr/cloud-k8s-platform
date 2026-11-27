@@ -1,0 +1,25 @@
+# Tells ArgoCD: "keep the cluster equal to the YAML files in k8s/aws on the main branch".
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-k8s-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Bat-sr/cloud-k8s-platform.git
+    targetRevision: main
+    path: k8s/aws
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true        # delete things that were removed from Git
+      selfHeal: true     # undo manual changes made with kubectl
+  ignoreDifferences:
+    - group: apps          # the HPA changes the replica count, so Git's "2" must not fight it
+      kind: Deployment
+      name: cloud-k8s-app
+      jsonPointers:
+        - /spec/replicas

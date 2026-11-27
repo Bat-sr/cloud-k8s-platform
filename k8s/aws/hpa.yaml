@@ -1,0 +1,23 @@
+# HorizontalPodAutoscaler: adds pods when CPU is high, removes them when it is low.
+# Needs metrics-server (packaged with RKE2) and the CPU request set in deployment.yaml.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cloud-k8s-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-k8s-app
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50   # 50% of the 50m request = 25m per pod
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 60   # shorter than the 300s default so the demo finishes sooner
